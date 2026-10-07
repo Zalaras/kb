@@ -254,6 +254,6 @@ func TestRun_VersionNeedsNoRepository(t *testing.T) {
 	for _, arg := range []string{"version", "--version", "-v"} {
 		var buf bytes.Buffer
 		require.NoError(t, run([]string{arg}, &buf), arg)
-		assert.Equal(t, "kb dev\n", buf.String(), "a source build reports dev; the release build sets main.version")
+		assert.Equal(t, "kb dev\n", buf.String(), "a checkout build reports dev; a release build sets main.version and a module-cache build reads the build info")
 	}
 }

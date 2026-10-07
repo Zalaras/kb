@@ -24,14 +24,29 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 
 	"github.com/Zalaras/kb/internal/kb"
 	"github.com/Zalaras/kb/internal/mermaid"
 )
 
-// version is set by the release build (-X main.version); a source build reports dev.
+// version is set by the release build (-X main.version). A binary built from the module
+// cache instead (go install, go tool) reports the module version Go recorded; only a
+// build from a checkout reports dev.
 var version = "dev"
+
+// buildVersion is the version a user sees: the release build's, else the module version
+// from the build info when it is a real one, else dev.
+func buildVersion() string {
+	if version != "dev" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return version
+}
 
 func main() {
 	if err := run(os.Args[1:], os.Stdout); err != nil {
@@ -59,7 +74,7 @@ func run(args []string, stdout io.Writer) error {
 	case "fences":
 		return cmdFences(args[1:], stdout)
 	case "version", "--version", "-v":
-		_, err := fmt.Fprintln(stdout, "kb "+version)
+		_, err := fmt.Fprintln(stdout, "kb "+buildVersion())
 		return err
 	}
 	cmd, ok := commands[args[0]]
