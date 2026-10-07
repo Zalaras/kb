@@ -1,0 +1,12 @@
+#!/bin/sh
+# Armed per clone by `make hooks`. Refuses to commit while this repo carries a repo-local
+# git identity: worktrees share .git/config, so `git config user.*` in a scratch worktree
+# lands on the real repo. Scratch repos are `git init` in a temp dir, or pass
+# `-c user.name=… -c user.email=…` per command.
+override=$(git config --local --get-regexp '^user\.(name|email)$' 2>/dev/null)
+if [ -n "$override" ]; then
+  echo "pre-commit guard: repo-local git identity override present — refusing to commit" >&2
+  printf '%s\n' "$override" | sed 's/^/  /' >&2
+  echo "  fix: git config --local --unset user.name; git config --local --unset user.email" >&2
+  exit 1
+fi

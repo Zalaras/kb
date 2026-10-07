@@ -1,0 +1,8 @@
+# Go
+/bin/
+*.test
+*.out
+
+# Local tooling state
+.DS_Store
+.claude/settings.local.json

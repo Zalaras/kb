@@ -1,0 +1,29 @@
+# This repository's own kb.yaml: the tool indexes and checks its own decision records, so
+# `make check` exercises the shipped binary against a real store. Every value here is what
+# this repo uses; see README.md § Configuration for what each key means and its default.
+
+dirs:
+  rule: docs/rules
+  decision: docs/adr
+  spec: docs/features
+  diagram: docs/diagrams
+  fact: docs/facts
+  lesson: docs/lessons
+  runbook: docs/runbooks
+  reference: docs/references
+
+# The one role a pack can be requested as here; lessons, if any, address it.
+roles: [maintainer]
+
+# The closed tag list.
+tags: [config, model, compat, deps]
+
+# Cited repo paths must open with one of these directories; make targets are checked
+# against the Makefile.
+refs:
+  files: ["*.md", "*.go", "Makefile"]
+  top_dirs: [docs, cmd]
+
+# The README's examples are illustrative, not records of this repo.
+citations:
+  exclude: [README.md]
