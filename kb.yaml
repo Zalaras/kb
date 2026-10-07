@@ -21,8 +21,8 @@ tags: [config, model, compat, deps]
 # Cited repo paths must open with one of these directories; make targets are checked
 # against the Makefile.
 refs:
-  files: ["*.md", "*.go", "Makefile"]
-  top_dirs: [docs, cmd]
+  files: ["*.md", "*.go", "*.sh", "*.yaml", "*.yml", "Makefile", ".githooks/*"]
+  top_dirs: [docs, cmd, internal, scripts]
 
 # The README's examples are illustrative, not records of this repo.
 citations:

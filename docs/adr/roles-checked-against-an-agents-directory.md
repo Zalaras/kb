@@ -6,7 +6,7 @@ date: 2026-10-08
 summary: With agents.dir set, check ties the role list to the agent files, one <name>.md each, through aliases, session roles and agentless files named in the config.
 features: []
 tags: [config, model]
-files: [agents.go, config.go]
+files: [internal/kb/agents.go, internal/kb/config.go]
 tests: [TestCheck_TiesTheRoleListToTheAgentsDirectoryWhenConfigured]
 refs: []
 supersedes: []

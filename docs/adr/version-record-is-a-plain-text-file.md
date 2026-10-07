@@ -6,8 +6,8 @@ date: 2026-10-08
 summary: A fact's verified range is checked against a plain-text version record the config names, one version, date and note per row, plus a configurable ceiling word.
 features: []
 tags: [model, compat]
-files: [versions.go, load.go, record.go, check.go]
-tests: [TestParseVersionRecord_ReadsRowsInAnyOrderAndSkipsCommentsAndBlanks, TestLoad_ReadsTheVersionRecordFromDisk, TestCheck_FailsAFactVerifiedAboveTheCeilingOrBelowTheFloorButAllowsALowerBoundBelowFloor]
+files: [internal/versions/versions.go, internal/kb/load.go, internal/kb/record.go, internal/kb/check.go]
+tests: [TestParseRecord_ReadsRowsInAnyOrderAndSkipsCommentsAndBlanks, TestLoad_ReadsTheVersionRecordFromDisk, TestCheck_FailsAFactVerifiedAboveTheCeilingOrBelowTheFloorButAllowsALowerBoundBelowFloor]
 refs: []
 supersedes: []
 ---

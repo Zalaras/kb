@@ -6,7 +6,7 @@ date: 2026-10-08
 summary: Repository values live in a strict kb.yaml at the root the tool walks up to; the record model and generated-file grammar are code.
 features: []
 tags: [config, model]
-files: [kb.yaml, config.go, cmd/kb/main.go]
+files: [kb.yaml, internal/kb/config.go, cmd/kb/main.go]
 tests: [TestLoadConfig_RejectsAnUnknownKeyAtAnyDepth, TestLoadConfig_GenericDefaultsLeaveEveryOptionalPassOffOrUnscoped, TestRun_GenThenCheckIsGreenFromASubdirectory]
 refs: []
 supersedes: []

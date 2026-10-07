@@ -58,8 +58,8 @@ func TestRun_UsageAndUnknownSubcommandErrors(t *testing.T) {
 	root := newRepo(t)
 	t.Chdir(root)
 	var buf bytes.Buffer
-	require.EqualError(t, run(nil, &buf), "usage: kb <gen|check|pack|for|why|show|cite|find|ls|fences|refs|scope|owners> [args]")
-	require.EqualError(t, run([]string{"bogus"}, &buf), `unknown subcommand "bogus" (want gen, check, pack, for, why, show, cite, find, ls, fences, refs, scope or owners)`)
+	require.EqualError(t, run(nil, &buf), "usage: kb <gen|check|pack|for|why|show|cite|find|ls|fences|refs|scope|owners|version> [args]")
+	require.EqualError(t, run([]string{"bogus"}, &buf), `unknown subcommand "bogus" (want gen, check, pack, for, why, show, cite, find, ls, fences, refs, scope, owners or version)`)
 	require.EqualError(t, run([]string{"show"}, &buf), "usage: kb show <id>")
 	require.EqualError(t, run([]string{"show", "nope"}, &buf), `no record with id "nope" (try: kb find nope)`)
 }
@@ -247,4 +247,13 @@ func TestRun_CheckAndRefsPassOnARepositoryWithASingleCommit(t *testing.T) {
 	buf.Reset()
 	require.NoError(t, run([]string{"refs"}, &buf))
 	assert.Equal(t, "dead-refs: 0 references checked (nothing to scan in 0 file(s))\n", buf.String(), "nothing changed against a root commit")
+}
+
+func TestRun_VersionNeedsNoRepository(t *testing.T) {
+	t.Chdir(t.TempDir())
+	for _, arg := range []string{"version", "--version", "-v"} {
+		var buf bytes.Buffer
+		require.NoError(t, run([]string{arg}, &buf), arg)
+		assert.Equal(t, "kb dev\n", buf.String(), "a source build reports dev; the release build sets main.version")
+	}
 }

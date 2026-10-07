@@ -6,8 +6,8 @@ date: 2026-10-08
 summary: kb.yaml is decoded by github.com/goccy/go-yaml in strict mode; record frontmatter keeps the hand-rolled flat scanner.
 features: []
 tags: [deps, config]
-files: [config.go, frontmatter.go, go.mod]
-tests: [TestLoadConfig_RejectsAnUnknownKeyAtAnyDepth, TestParseFrontmatter_ReadsScalarsInlineListsAndBlockListsInOnePass]
+files: [internal/kb/config.go, internal/frontmatter/frontmatter.go, go.mod]
+tests: [TestLoadConfig_RejectsAnUnknownKeyAtAnyDepth, TestParse_ReadsScalarsInlineListsAndBlockListsInOnePass]
 refs: [https://github.com/goccy/go-yaml]
 supersedes: []
 ---

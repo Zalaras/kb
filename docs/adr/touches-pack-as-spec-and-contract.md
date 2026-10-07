@@ -6,7 +6,7 @@ date: 2026-10-08
 summary: Touches names features a plan edits without changing; they pack as spec and contract only, except for configured roles, and kb scope can widen the header.
 features: []
 tags: [model]
-files: [pack.go, scope.go]
+files: [internal/kb/pack.go, internal/kb/scope.go]
 tests: [TestPack_TouchedFeaturesPackSpecAndContractOnlyExceptForReview, TestScope_TouchWidensTheTouchesHeaderWithoutDuplicates]
 refs: []
 supersedes: []

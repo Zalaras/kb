@@ -1,0 +1,76 @@
+package gitx
+
+import (
+	"bytes"
+	"context"
+	"errors"
+	"fmt"
+	"os/exec"
+	"strings"
+	"time"
+)
+
+// Out runs git in root, feeding stdin when non-empty, and returns stdout. A non-zero exit
+// is an error carrying stderr, except the exit codes okExit lists, which return stdout as is
+// (git check-ignore exits 1 when nothing was ignored).
+func Out(root, stdin string, okExit []int, args ...string) (string, error) {
+	cmd := exec.CommandContext(context.Background(), "git", args...)
+	cmd.Dir = root
+	cmd.WaitDelay = 5 * time.Second
+	if stdin != "" {
+		cmd.Stdin = strings.NewReader(stdin)
+	}
+	var out, errb bytes.Buffer
+	cmd.Stdout, cmd.Stderr = &out, &errb
+	err := cmd.Run()
+	var exit *exec.ExitError
+	if errors.As(err, &exit) {
+		for _, code := range okExit {
+			if exit.ExitCode() == code {
+				return out.String(), nil
+			}
+		}
+	}
+	if err != nil {
+		return "", fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, strings.TrimSpace(errb.String()))
+	}
+	return out.String(), nil
+}
+
+// Lines runs git and splits stdout into non-empty lines.
+func Lines(root string, args ...string) ([]string, error) {
+	out, err := Out(root, "", nil, args...)
+	if err != nil {
+		return nil, err
+	}
+	var lines []string
+	for _, l := range strings.Split(out, "\n") {
+		if l != "" {
+			lines = append(lines, l)
+		}
+	}
+	return lines, nil
+}
+
+// DiffRange is the commit range a changed-files query reads: the last commit on the base
+// branch, the branch's whole divergence from it anywhere else, and "" when there is nothing
+// to diff against (a root commit).
+func DiffRange(root, base string) (string, error) {
+	branch, err := Out(root, "", nil, "rev-parse", "--abbrev-ref", "HEAD")
+	if err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(branch) != base {
+		return base + "...HEAD", nil
+	}
+	// A root commit has no parent: the range is empty, not an error (rev-parse --verify
+	// --quiet exits 1 for an unknown revision and prints nothing).
+	parent, err := Out(root, "", []int{1}, "rev-parse", "--verify", "--quiet", "HEAD~1")
+	if err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(parent) == "" {
+		return "", nil
+	}
+	return "HEAD~1", nil
+}

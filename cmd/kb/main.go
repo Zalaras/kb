@@ -13,6 +13,7 @@
 //	kb refs [--all | FILE...]   # every cited repo path, make target and flag exists; default = files changed against main
 //	kb scope --plan NAME [--touch]  # every changed source file's feature is in the plan's headers; --touch widens Touches
 //	kb owners PATH...           # path<TAB>feature[,feature] per path, - when none (for scripts)
+//	kb version                  # the release this binary was built from
 //
 // All logic lives in the kb package; this file only dispatches.
 package main
@@ -25,8 +26,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Zalaras/kb"
+	"github.com/Zalaras/kb/internal/kb"
+	"github.com/Zalaras/kb/internal/mermaid"
 )
+
+// version is set by the release build (-X main.version); a source build reports dev.
+var version = "dev"
 
 func main() {
 	if err := run(os.Args[1:], os.Stdout); err != nil {
@@ -43,18 +48,23 @@ func exitCode(err error) int {
 	return 1
 }
 
-const usage = "usage: kb <gen|check|pack|for|why|show|cite|find|ls|fences|refs|scope|owners> [args]"
+const usage = "usage: kb <gen|check|pack|for|why|show|cite|find|ls|fences|refs|scope|owners|version> [args]"
 
 func run(args []string, stdout io.Writer) error {
 	if len(args) == 0 {
 		return fmt.Errorf("%s", usage)
 	}
-	if args[0] == "fences" {
+	// fences and version need no index, so they run anywhere.
+	switch args[0] {
+	case "fences":
 		return cmdFences(args[1:], stdout)
+	case "version", "--version", "-v":
+		_, err := fmt.Fprintln(stdout, "kb "+version)
+		return err
 	}
 	cmd, ok := commands[args[0]]
 	if !ok {
-		return fmt.Errorf("unknown subcommand %q (want gen, check, pack, for, why, show, cite, find, ls, fences, refs, scope or owners)", args[0])
+		return fmt.Errorf("unknown subcommand %q (want gen, check, pack, for, why, show, cite, find, ls, fences, refs, scope, owners or version)", args[0])
 	}
 	root, err := repoRoot()
 	if err != nil {
@@ -96,7 +106,7 @@ func cmdID(ix *kb.Index, args []string, stdout io.Writer, query func(*kb.Index, 
 }
 
 // cmdFences checks the mermaid fences of files outside the record tree (a plan, a scratch
-// draft) with the rule check-kb applies to records. It needs no index, so it runs anywhere.
+// draft) with the rule kb check applies to records.
 func cmdFences(paths []string, stdout io.Writer) error {
 	if len(paths) == 0 {
 		return fmt.Errorf("usage: kb fences <file> [file ...]")
@@ -107,7 +117,7 @@ func cmdFences(paths []string, stdout io.Writer) error {
 		if err != nil {
 			return fmt.Errorf("reading %s: %w", p, err)
 		}
-		for _, f := range kb.CheckFences(p, string(data), 0) {
+		for _, f := range mermaid.CheckFences(p, string(data), 0) {
 			fmt.Fprintln(stdout, f)
 			n++
 		}
