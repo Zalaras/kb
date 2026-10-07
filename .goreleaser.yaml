@@ -1,0 +1,48 @@
+version: 2
+
+project_name: kb
+
+builds:
+  - id: kb
+    main: ./cmd/kb
+    binary: kb
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    # Only `version`: cmd/kb/main.go declares no commit or date variable, and -X against a
+    # symbol that does not exist is silently ignored rather than caught.
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - id: kb
+    formats:
+      - tar.gz
+    name_template: "kb_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE
+
+# checksums.txt carries every archive's SHA-256; scripts/install.sh verifies against it.
+# Releases are not signed: a signing key would need repository secrets this project does
+# not hold, and the installer's trust anchor is the repository itself.
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    # The notes show exactly the four types that cut the release (.githooks/commit-msg).
+    include:
+      - "^(feat|fix|perf|refactor)[(!:]"
+
+release:
+  github:
+    owner: Zalaras
+    name: kb

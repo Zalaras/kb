@@ -11,24 +11,31 @@ specific to a repository lives in that repository's `kb.yaml`.
 
 ## Install
 
-As a command:
+Pick one:
 
 ```sh
+# A released binary, verified against the release's SHA-256 (macOS or Linux, amd64 or arm64)
+curl -fsSL https://raw.githubusercontent.com/Zalaras/kb/main/scripts/install.sh | sh
+
+# Pinned by a Go module (Go 1.24+), so every clone and CI run uses the same version
+go get -tool github.com/Zalaras/kb/cmd/kb@latest
+go tool kb check
+
+# From source, anywhere Go runs
 go install github.com/Zalaras/kb/cmd/kb@latest
 ```
 
-As a tool pinned by a Go module (Go 1.24+), so every clone runs the same version:
+The installer puts `kb` in `~/.local/bin` (`--bin-dir`, `--version`, `--arch`; `--help` lists
+them). It downloads from the GitHub release and refuses an archive whose checksum does not
+match `checksums.txt`. Prefer to read it first:
 
 ```sh
-go get -tool github.com/Zalaras/kb/cmd/kb@latest
-go tool kb check
+curl -fsSL -o install.sh https://raw.githubusercontent.com/Zalaras/kb/main/scripts/install.sh
+less install.sh
+sh install.sh
 ```
 
-As a library:
-
-```sh
-go get github.com/Zalaras/kb
-```
+`kb version` prints the release a binary was built from.
 
 ## Quick start
 
@@ -146,6 +153,7 @@ as hand-edited; one whose sources moved on is reported as stale.
 | `kb refs [--all \| --changed \| FILE...]` | every repo path, `make` target and `<binary> -flag` cited in a comment or markdown line exists | 1 if any is missing |
 | `kb scope --plan NAME [--touch]` | every changed source file's feature is in the plan's `**Features**` or `**Touches**` header; `--touch` widens Touches | 1 per unplaced file |
 | `kb owners PATH...` | `path<TAB>feature[,feature]` per path, for scripts | 0 |
+| `kb version` | the release this binary was built from; needs no repository | 0 |
 
 A usage mistake exits 2. Findings print as `path:line: message`.
 
@@ -194,29 +202,23 @@ layout; an optional pass stays off until its key is set.
 | `scope.skip` | `["**/CLAUDE.md"]` | files judged by what they mirror, not by their owner |
 
 This repository's own `kb.yaml` is the smallest real example; the fixtures in
-`fixture_test.go` spell out every key.
+`internal/kb/fixture_test.go` spell out every key.
 
-## Library
+## Layout
 
-```go
-ix, findings, err := kb.Load(root)          // parse kb.yaml, walk the tree, read every record
-findings, err = kb.Check(ix, findings)      // every invariant that needs no git checkout
-findings, err = kb.CheckRepo(ix, findings)  // Check plus the refs pass over tracked files
-outs, more, err := kb.Outputs(ix)           // the generated files, without writing them
-written, err := kb.Apply(root, outs)        // write the ones that changed
-n, err := kb.Pack(ix, kb.PackOptions{Plan: "p", Role: "impl", Features: []string{"f"}}, w)
-```
-
-`kb.For`, `kb.Why`, `kb.Show`, `kb.Cite`, `kb.Find`, `kb.List`, `kb.Owners`, `kb.Refs` and
-`kb.Scope` back the matching subcommands; `kb.ParseFrontmatter`, `kb.ParseAnchors`,
-`kb.ParseVersionRecord` and `kb.MatchGlob` are the parsers underneath. `cmd/kb/main.go`
-only dispatches, so it doubles as the usage example for each.
+`kb` is a command, not a library: every Go package is under `internal/`, so the contract
+is the command line above, not a Go API. `cmd/kb` dispatches; `internal/kb` holds the
+record model, the index and the subcommands; the leaf packages (`frontmatter`, `glob`,
+`mermaid`, `markers`, `anchor`, `versions`, `tree`, `comments`, `gitx`) each parse or
+walk one thing and know nothing about records.
 
 ## Development
 
 `make check` runs the linter, the tests and `kb check` over this repository's own records in
-`docs/adr/`, which is where its decisions are written up. `make hooks` arms the pre-commit
-guard once per clone.
+`docs/adr/`, which is where its decisions are written up. `make hooks` arms the commit
+guards once per clone: commits are conventional, and a `feat`, `fix`, `perf` or `refactor`
+pushed to `main` cuts a GitHub release through GoReleaser (`.github/workflows/release.yml`),
+with `make release-check` building the same archives locally into `dist/`.
 
 ## Licence
 

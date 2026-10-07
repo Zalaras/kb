@@ -6,3 +6,6 @@
 # Local tooling state
 .DS_Store
 .claude/settings.local.json
+
+# GoReleaser build output (make release-check)
+/dist/

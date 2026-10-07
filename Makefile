@@ -36,5 +36,16 @@ check-kb: ## Check this repo's own records and generated files
 check: lint test check-kb ## Lint + test + check-kb
 
 .PHONY: hooks
-hooks: ## Arm the pre-commit identity guard (.githooks/) for this clone
+hooks: ## Arm the commit-msg and pre-commit guards (.githooks/) for this clone
 	git config core.hooksPath .githooks
+
+# Wraps scripts/install.sh, which is also the curl | sh front door (README.md § Install), so
+# the arch resolution, temp dir, checksum verification and PATH warnings exist in one place.
+.PHONY: install
+install: ## Install the latest released kb into ~/.local/bin (KB_BIN_DIR, KB_VERSION override)
+	@sh scripts/install.sh
+
+.PHONY: release-check
+release-check: ## Validate .goreleaser.yaml and build a local snapshot release into ./dist
+	goreleaser check
+	goreleaser release --snapshot --clean

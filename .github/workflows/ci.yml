@@ -1,0 +1,32 @@
+# Lint, test and check this repository's own records on every push and pull request.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # kb check diffs against the base branch and reads the previous commit.
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.13.2
+
+      - run: go test -count=1 ./...
+
+      - run: go run ./cmd/kb check

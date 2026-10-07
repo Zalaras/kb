@@ -1,0 +1,75 @@
+# Release on every push to main whose commits warrant a version bump (a docs-only push exits
+# green without releasing). The commit types that bump are the ones .githooks/commit-msg
+# admits: feat → minor, fix/perf/refactor → patch, `!` → minor while on 0.x.
+name: release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # svu reads the whole commit history and the tag list; a shallow clone silently
+          # computes the wrong version.
+          fetch-depth: 0
+
+      - name: Fetch tags
+        run: git fetch --force --tags
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Compute next version
+        id: version
+        run: |
+          set -euo pipefail
+          go install github.com/caarlos0/svu/v3@v3.4.1
+          current="$(svu current 2>/dev/null || echo v0.0.0)"
+          # --v0 clamps any breaking marker to a minor bump while on 0.x, so v1.0.0 cannot
+          # be cut by accident; removing this flag is the deliberate act that cuts v1.
+          next="$(svu next --v0)"
+          # svu hardwires feat→minor and fix→patch only; perf and refactor also take a
+          # patch here, so when they are all that is new since the last tag, force it.
+          if [ "$current" = "$next" ] && git log "${current}..HEAD" --format=%s 2>/dev/null | grep -qE '^(perf|refactor)[(!:]'; then
+            next="$(svu patch)"
+          fi
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "next=$next" >> "$GITHUB_OUTPUT"
+          if [ "$current" = "$next" ]; then
+            echo "No release-worthy commits since $current; skipping release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Releasing $current -> $next"
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Tagging and releasing stay in one job: a tag pushed with GITHUB_TOKEN does not
+      # trigger workflows, so a separate tag-triggered release would never fire.
+      - name: Tag
+        if: steps.version.outputs.release == 'true'
+        run: |
+          set -euo pipefail
+          git tag "${{ steps.version.outputs.next }}"
+          git push origin "${{ steps.version.outputs.next }}"
+
+      - uses: goreleaser/goreleaser-action@v7
+        if: steps.version.outputs.release == 'true'
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

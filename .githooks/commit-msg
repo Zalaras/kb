@@ -1,0 +1,54 @@
+#!/bin/sh
+# Commit-message guard, armed per clone by `make hooks`. Subjects are conventional commits,
+# because .github/workflows/release.yml derives the version from them: feat → minor,
+# fix/perf/refactor → patch, everything else releases nothing. `!` marks a breaking change
+# (a minor bump while on 0.x) and needs a human: KB_BREAKING=1 git commit …
+#
+# svu (the release.yml pin) matches the breaking footer phrase anywhere in a message and
+# `!` on any type, so both are deliberate acts here.
+
+msg_file="$1"
+msg=$(grep -v '^#' "$msg_file")
+subject=$(printf '%s\n' "$msg" | head -n1)
+
+fail() {
+  echo "commit-msg guard: $1" >&2
+  echo "  subject: $subject" >&2
+  exit 1
+}
+
+case "$subject" in
+  "Merge "*) exit 0 ;;
+esac
+
+if printf '%s\n' "$msg" | grep -qiE 'BREAKING[- ]CHANGE'; then
+  fail "the breaking footer/phrase may not appear anywhere in a commit message; mark a breaking change with '!' instead"
+fi
+
+if ! printf '%s\n' "$subject" | grep -qE '^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([^)]*\))?!?: .+'; then
+  fail "subject must be 'type(scope): summary' with a known type (build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)"
+fi
+
+if printf '%s\n' "$subject" | grep -qE '^[a-z]+(\([^)]*\))?!:' && [ "${KB_BREAKING:-}" != 1 ]; then
+  fail "'!' marks a breaking change and requires KB_BREAKING=1 set by a human"
+fi
+
+type=$(printf '%s\n' "$subject" | sed -E 's/^([a-z]+).*/\1/')
+case "$type" in
+  feat|fix|perf|refactor)
+    # The summary is published verbatim as a release-note bullet.
+    summary=${subject#*: }
+    if [ "${#summary}" -gt 72 ]; then
+      fail "a $type summary is a published release note and caps at 72 chars (got ${#summary})"
+    fi
+    # A release is for the shipped binary: a change confined to tests, docs, CI or build
+    # config takes test, docs, ci, chore or build instead. KB_RELEASE=1 overrides for the
+    # rare unshipped file that changes what users receive (the installer, packaging).
+    unshipped='(_test\.go)$|^(docs|\.github|\.githooks)/|(\.md|\.ya?ml)$|^Makefile$'
+    if [ "${KB_RELEASE:-}" != 1 ] && ! git diff --cached --name-only | grep -qvE "$unshipped"; then
+      fail "a $type cuts a release, but no staged file changes the shipped binary — use test, docs, ci, chore or build; KB_RELEASE=1 overrides"
+    fi
+    ;;
+esac
+
+exit 0
