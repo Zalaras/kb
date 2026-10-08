@@ -1,13 +1,13 @@
 # kb
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/Zalaras/kb.svg)](https://pkg.go.dev/github.com/Zalaras/kb)
+[![release](https://img.shields.io/github/v/release/Zalaras/kb)](https://github.com/Zalaras/kb/releases/latest) [![ci](https://github.com/Zalaras/kb/actions/workflows/ci.yml/badge.svg)](https://github.com/Zalaras/kb/actions/workflows/ci.yml)
 
 `kb` keeps a repository's knowledge as typed Markdown records with strict frontmatter, and
 gates them the way a compiler gates code: every id, status, tag, citation, glob, test name
 and version range is checked, the index files are generated rather than written, and an
 agent or a person can ask for exactly the records a piece of work needs instead of reading
-whole documents. It is a Go library (package `kb`) and a command (`cmd/kb`); everything
-specific to a repository lives in that repository's `kb.yaml`.
+whole documents. It is one command, `kb`, built in Go; everything specific to a repository
+lives in that repository's `kb.yaml`.
 
 ## Install
 
